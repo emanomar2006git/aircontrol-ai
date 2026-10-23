@@ -53,7 +53,9 @@ class HandDetector:
         if not result.hand_landmarks:
             return None
         points = result.hand_landmarks[0]
-        return HandData(landmarks=[(p.x, p.y, p.z) for p in points])
+        height, width = frame.shape[:2]
+        return HandData(landmarks=[(p.x, p.y, p.z) for p in points],
+                        aspect_ratio=width / height)
 
     def draw_landmarks(self, frame, hand):
         """Draw the hand skeleton on the frame. Does nothing if hand is None."""

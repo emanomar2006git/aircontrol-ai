@@ -9,8 +9,11 @@ class HandData:
 
     landmarks is a list of 21 points. Each point is a tuple (x, y, z).
     x and y are between 0 and 1 (a fraction of the image width and height).
+    aspect_ratio is image width / image height (for example 640 / 480).
+    It is needed to measure distances correctly on a wide image.
     """
     landmarks: list
+    aspect_ratio: float = 1.0
 
 
 class GestureType(Enum):
