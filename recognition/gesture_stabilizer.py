@@ -3,6 +3,18 @@ from models.types import GestureType
 
 DEFAULT_REQUIRED_FRAMES = 5  # about 0.2 - 0.3 seconds at 17 - 30 FPS
 
+# How many frames each gesture must be held. Play / Pause need a longer hold than the volume,
+# because a wrong play/pause is more annoying than a wrong volume step.
+# Reason for holding longer: while you open or close your hand, it passes through shapes that look like
+# another gesture (for example THUMB_DOWN) for a moment. A longer hold ignores that short moment.
+GESTURE_HOLD = {
+    GestureType.THUMB_UP: 8,
+    GestureType.THUMB_DOWN: 8,
+    GestureType.CLOSED_FIST: 10,
+    GestureType.OPEN_PALM: 10,
+}
+VOLUME_HOLD = GESTURE_HOLD  # old name, kept so older scripts still work
+
 
 class GestureStabilizer:
     """Changes its output only after a NEW gesture was seen in N frames in a row.
@@ -16,10 +28,14 @@ class GestureStabilizer:
     The single DOWN frame was ignored, and UP appeared only after 3 UP frames in a row.
     """
 
-    def __init__(self, required_frames=DEFAULT_REQUIRED_FRAMES):
-        if required_frames < 1:
-            raise ValueError("required_frames must be at least 1")
+    def __init__(self, required_frames=DEFAULT_REQUIRED_FRAMES, per_gesture=None):
+        """required_frames: frames in a row needed to accept a new gesture.
+        per_gesture: optional dictionary {GestureType: frames} for gestures that need a different number."""
+        per_gesture = per_gesture or {}
+        if required_frames < 1 or any(n < 1 for n in per_gesture.values()):
+            raise ValueError("the number of frames must be at least 1")
         self.required_frames = required_frames
+        self.per_gesture = dict(per_gesture)
         self.reset()
 
     def reset(self):
@@ -47,7 +63,8 @@ class GestureStabilizer:
             self._candidate = raw_gesture
             self._count = 1
 
-        if self._count >= self.required_frames:
+        needed = self.per_gesture.get(self._candidate, self.required_frames)
+        if self._count >= needed:
             self._stable = self._candidate
             self._count = 0
         return self._stable

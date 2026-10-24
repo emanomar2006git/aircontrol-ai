@@ -9,6 +9,7 @@ from recognition.gesture_stabilizer import GestureStabilizer
 UP = GestureType.THUMB_UP
 DOWN = GestureType.THUMB_DOWN
 FIST = GestureType.CLOSED_FIST
+PALM = GestureType.OPEN_PALM
 NONE = GestureType.NONE
 
 
@@ -64,6 +65,39 @@ class TestGestureStabilizer(unittest.TestCase):
         s.reset()
         self.assertEqual(s.stable, NONE)
         self.assertEqual(feed(s, [UP]), [NONE])
+
+    def test_volume_gesture_needs_more_frames_than_fist(self):
+        s = GestureStabilizer(3, per_gesture={DOWN: 6})
+        self.assertEqual(feed(s, [DOWN] * 5), [NONE] * 5)
+        self.assertEqual(feed(s, [DOWN]), [DOWN])
+        s.reset()
+        self.assertEqual(feed(s, [FIST] * 3), [NONE, NONE, FIST])
+
+    def test_closing_hand_moment_is_ignored(self):
+        """The thumb points down for 4 frames while the hand closes, then the fist is complete."""
+        from recognition.gesture_stabilizer import VOLUME_HOLD
+        s = GestureStabilizer(per_gesture=VOLUME_HOLD)
+        feed(s, [PALM] * 6)
+        out = feed(s, [DOWN] * 6 + [FIST] * 10)
+        self.assertNotIn(DOWN, out)
+        self.assertEqual(out[-1], FIST)
+
+    def test_play_pause_need_a_longer_hold_than_volume(self):
+        from recognition.gesture_stabilizer import GESTURE_HOLD
+        self.assertGreater(GESTURE_HOLD[FIST], GESTURE_HOLD[UP])
+        self.assertGreater(GESTURE_HOLD[PALM], GESTURE_HOLD[DOWN])
+        s = GestureStabilizer(per_gesture=GESTURE_HOLD)
+        self.assertEqual(feed(s, [PALM] * 9)[-1], NONE)
+        self.assertEqual(feed(s, [PALM])[-1], PALM)
+
+    def test_real_thumb_down_is_accepted(self):
+        from recognition.gesture_stabilizer import VOLUME_HOLD
+        s = GestureStabilizer(per_gesture=VOLUME_HOLD)
+        self.assertEqual(feed(s, [DOWN] * 8)[-1], DOWN)
+
+    def test_invalid_per_gesture(self):
+        with self.assertRaises(ValueError):
+            GestureStabilizer(3, per_gesture={DOWN: 0})
 
     def test_invalid_required_frames(self):
         with self.assertRaises(ValueError):
