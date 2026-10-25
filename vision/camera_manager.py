@@ -7,9 +7,15 @@ import cv2
 class CameraManager:
     """Wraps the camera so the rest of the app never touches OpenCV capture directly."""
 
-    def __init__(self, camera_index=0, mirror=True):
+    def __init__(self, camera_index=0, mirror=True, width=640, height=480, fourcc="YUY2", fps=30):
         self.camera_index = camera_index
         self.mirror = mirror
+        # Settings found with try_camera_modes.py: asking for them explicitly gave 16 FPS instead of 10.
+        # A camera that does not support one of them simply ignores it.
+        self.width = width
+        self.height = height
+        self.fourcc = fourcc
+        self.fps = fps
         self._capture = None
 
     def open(self):
@@ -19,8 +25,19 @@ class CameraManager:
         if not capture.isOpened():
             capture.release()
             return False
+        self._apply_settings(capture)
         self._capture = capture
         return True
+
+    def _apply_settings(self, capture):
+        """Ask the camera for a fast, small picture mode (the camera may ignore what it cannot do)."""
+        if self.fourcc:
+            capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*self.fourcc))
+        if self.width and self.height:
+            capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+        if self.fps:
+            capture.set(cv2.CAP_PROP_FPS, self.fps)
 
     def is_open(self):
         """True while the camera is open and ready."""

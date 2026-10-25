@@ -11,7 +11,7 @@ RED = "#c62828"
 GREY = "#555555"
 VIDEO_WIDTH, VIDEO_HEIGHT = 640, 480
 PANEL_WIDTH = 300
-LOOP_DELAY_MS = 1   # wait before the next frame (the work itself takes about 30 ms)
+LOOP_DELAY_MS = 1   # used when the loop is driven by tests (they call root.update())
 SHOW_EVERY = 2      # draw the picture every 2nd frame: drawing costs about 25 ms, and the FPS matters (NFR-01)
 
 
@@ -30,6 +30,7 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self._photo = None       # we must keep a reference, or Tk throws the image away
         self._after_id = None
+        self._real_loop = False     # True only inside run(): a 0 ms loop would never end a root.update() in tests
         self._closed = False
         self._frame_number = 0
         self._build()
@@ -107,12 +108,19 @@ class MainWindow:
         """Start the camera and show the window until it is closed."""
         self.controller.start()
         self._refresh_texts()
+        self._real_loop = True
         self._schedule()
         self.root.mainloop()
 
     def _schedule(self):
         if self._after_id is None and not self._closed:
-            self._after_id = self.root.after(LOOP_DELAY_MS, self._tick)
+            if self._real_loop:
+                # after(1) wasted about 15 ms per frame on Windows (its timer cannot sleep less than ~15 ms),
+                # after(0) does not wait at all (see measure_ui_speed.py). We must NOT use after_idle here:
+                # a loop of idle calls never lets Tk listen to the mouse and the timers (the window freezes).
+                self._after_id = self.root.after(0, self._tick)
+            else:
+                self._after_id = self.root.after(LOOP_DELAY_MS, self._tick)
 
     def _tick(self):
         """One step of the loop: process one frame and show the result."""
