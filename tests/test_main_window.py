@@ -136,5 +136,30 @@ class TestMainWindow(unittest.TestCase):
         self.assertTrue(window._closed)
 
 
+@unittest.skipIf(tk is None, "Tkinter is not available")
+class TestRealLoop(unittest.TestCase):
+    """A bug we had (Phase 10): a loop with no waiting kept Tk so busy that the window was never shown,
+    although the camera was running. This test runs the REAL loop (window.run) and looks at the window."""
+
+    def test_window_is_shown_while_the_real_loop_runs(self):
+        try:
+            root = tk.Tk()
+        except tk.TclError:
+            self.skipTest("no screen available")
+        controller = make_controller([PALM] * 100000)[0]
+        window = MainWindow(controller, root=root)
+        state = {}
+
+        def look():
+            state["mapped"] = root.winfo_ismapped()
+            state["picture_width"] = window.video_label.winfo_width()
+            window.close()
+
+        root.after(1500, look)
+        window.run()
+        self.assertTrue(state["mapped"], "the window was never shown")
+        self.assertGreaterEqual(state["picture_width"], 600)
+
+
 if __name__ == "__main__":
     unittest.main()

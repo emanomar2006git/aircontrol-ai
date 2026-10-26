@@ -116,8 +116,11 @@ class MainWindow:
         if self._after_id is None and not self._closed:
             if self._real_loop:
                 # after(1) wasted about 15 ms per frame on Windows (its timer cannot sleep less than ~15 ms),
-                # after(0) does not wait at all (see measure_ui_speed.py). We must NOT use after_idle here:
-                # a loop of idle calls never lets Tk listen to the mouse and the timers (the window freezes).
+                # after(0) does not wait at all (see measure_ui_speed.py). But a loop with no waiting never
+                # leaves Tk any "free time" to draw the window, so the window was never shown (Phase 10 bug).
+                # update_idletasks() gives Tk that time. We must NOT use after_idle: a loop of idle calls
+                # never lets Tk listen to the mouse and the timers (the window freezes).
+                self.root.update_idletasks()
                 self._after_id = self.root.after(0, self._tick)
             else:
                 self._after_id = self.root.after(LOOP_DELAY_MS, self._tick)

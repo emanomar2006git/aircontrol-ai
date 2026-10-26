@@ -10,8 +10,8 @@ DEFAULT_REQUIRED_FRAMES = 5  # about 0.2 - 0.3 seconds at 17 - 30 FPS
 GESTURE_HOLD = {
     GestureType.THUMB_UP: 8,
     GestureType.THUMB_DOWN: 8,
-    GestureType.CLOSED_FIST: 10,
-    GestureType.OPEN_PALM: 10,
+    GestureType.CLOSED_FIST: 6,    # was 10: a real recording showed the fist was often missed (3/6 -> 6/6)
+    GestureType.OPEN_PALM: 10,     # stays long on purpose: raising an open hand must not start the video
 }
 VOLUME_HOLD = GESTURE_HOLD  # old name, kept so older scripts still work
 

@@ -28,8 +28,14 @@ class TestMotionFilter(unittest.TestCase):
         motion = MotionFilter()
         steady = run(motion, [self.base] * 20)
         self.assertFalse(steady[0])
-        self.assertFalse(steady[5])      # only 0.17 s of history
+        self.assertFalse(steady[3])      # only 0.1 s of history (it needs 0.16 s = 80% of the 0.2 s window)
         self.assertTrue(steady[-1])
+
+    def test_defaults_were_tuned_on_a_real_recording(self):
+        """Phase 10: window 0.3 -> 0.2 s gave 22/24 instead of 19/24. A looser max_change added false triggers."""
+        motion = MotionFilter()
+        self.assertEqual(motion.window_seconds, 0.2)
+        self.assertEqual(motion.max_change, 0.08)
 
     def test_still_hand_is_steady_at_any_fps(self):
         for fps in (10, 16, 30, 60):

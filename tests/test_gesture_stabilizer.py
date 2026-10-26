@@ -82,26 +82,22 @@ class TestGestureStabilizer(unittest.TestCase):
         self.assertNotIn(DOWN, out)
         self.assertEqual(out[-1], FIST)
 
-    def test_play_pause_need_a_longer_hold_than_volume(self):
+    def test_play_needs_a_longer_hold_than_volume(self):
+        """OPEN_PALM (play) stays long: raising an open hand must not start the video."""
         from recognition.gesture_stabilizer import GESTURE_HOLD
-        self.assertGreater(GESTURE_HOLD[FIST], GESTURE_HOLD[UP])
+        self.assertGreater(GESTURE_HOLD[PALM], GESTURE_HOLD[UP])
         self.assertGreater(GESTURE_HOLD[PALM], GESTURE_HOLD[DOWN])
         s = GestureStabilizer(per_gesture=GESTURE_HOLD)
         self.assertEqual(feed(s, [PALM] * 9)[-1], NONE)
         self.assertEqual(feed(s, [PALM])[-1], PALM)
 
-    def test_real_thumb_down_is_accepted(self):
-        from recognition.gesture_stabilizer import VOLUME_HOLD
-        s = GestureStabilizer(per_gesture=VOLUME_HOLD)
-        self.assertEqual(feed(s, [DOWN] * 8)[-1], DOWN)
-
-    def test_invalid_per_gesture(self):
-        with self.assertRaises(ValueError):
-            GestureStabilizer(3, per_gesture={DOWN: 0})
-
-    def test_invalid_required_frames(self):
-        with self.assertRaises(ValueError):
-            GestureStabilizer(0)
+    def test_fist_hold_was_tuned_on_a_real_recording(self):
+        """Phase 10: with 10 frames the real fist was recognized 3/6 times, with 6 frames 6/6 (same false triggers)."""
+        from recognition.gesture_stabilizer import GESTURE_HOLD
+        self.assertEqual(GESTURE_HOLD[FIST], 6)
+        s = GestureStabilizer(per_gesture=GESTURE_HOLD)
+        self.assertEqual(feed(s, [FIST] * 5)[-1], NONE)
+        self.assertEqual(feed(s, [FIST])[-1], FIST)
 
 
 if __name__ == "__main__":

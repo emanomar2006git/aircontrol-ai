@@ -24,8 +24,9 @@ class FrameResult:
     stable: GestureType      # gesture after the stabilizer
     command: Command         # command of THIS frame (NONE most of the time)
     steady: bool             # True when the hand is still
-    change: float            # how much the hand changed in the last 0.3 s (None if unknown)
+    change: float            # how much the hand changed in the last 0.2 s (None if unknown)
     fps: float
+    hand: object = None      # the HandData of this frame (None if no hand). Used by the recorder of accuracy_test.py
 
 
 class AppController:
@@ -151,7 +152,7 @@ class AppController:
         self._update_fps(now)
         self._refresh_volume()
         return FrameResult(frame=frame, hand_found=hand is not None, raw=raw, stable=stable,
-                           command=command, steady=self.motion.steady, change=change, fps=self.fps)
+                           command=command, steady=self.motion.steady, change=change, fps=self.fps, hand=hand)
 
     # ---------- helpers ----------
     def _execute(self, command):

@@ -6,16 +6,20 @@ WRIST = 0
 MIDDLE_MCP = 9
 
 DEFAULT_MAX_CHANGE = 0.08    # hand sizes. The hand is "still" if nothing moved more than this ...
-DEFAULT_WINDOW_SECONDS = 0.3  # ... during the last 0.3 seconds.
+DEFAULT_WINDOW_SECONDS = 0.2  # ... during the last 0.2 seconds (it was 0.3; tuned on a real recording, see below).
 
 
 class MotionFilter:
-    """Measures how much the hand changed (moved AND changed shape) during the last 0.3 seconds.
+    """Measures how much the hand changed (moved AND changed shape) during the last window (0.2 seconds).
 
     The number is: the average movement of the 21 landmark points, in "hand sizes"
     (hand size = wrist to middle knuckle, so it does not depend on the distance to the camera).
-    We take the biggest change between the newest frame and any frame of the last 0.3 seconds.
+    We take the biggest change between the newest frame and any frame of the last window.
     It does not depend on the FPS, because it uses a fixed time window.
+
+    Tuning (Phase 10): replaying a real 24-try recording with window 0.3 s gave 19/24 correct and 2.53 s average;
+    with 0.2 s and a shorter hold for CLOSED_FIST it gave 22/24 and 2.29 s, with the same 2 false triggers
+    in 60 s of natural movement. A looser max_change (0.10 or more) added false triggers, so it stays 0.08.
 
     Why: when you raise your hand, or close/open it, it passes through shapes that look like a gesture
     (for example a half-closed hand with the thumb out looks like THUMB_DOWN). A gesture must come
@@ -51,7 +55,7 @@ class MotionFilter:
     def update(self, hand, now):
         """Give the hand of the newest frame (or None) and the time in seconds.
         Returns the change in hand sizes, or None when it cannot be known yet
-        (no hand, or the hand appeared less than 0.3 seconds ago)."""
+        (no hand, or the hand appeared less than a window ago)."""
         measured = self._points(hand) if hand is not None else None
         if measured is None:  # no hand: forget everything
             self.reset()
