@@ -1,6 +1,5 @@
-# AirControl AI - required libraries
-mediapipe>=0.10.30
-opencv-contrib-python>=4.8
-numpy
-pyautogui>=0.9.54
-pycaw; sys_platform == "win32"
+opencv-contrib-python==5.0.0.93
+mediapipe==1.1.1
+numpy==2.5.4
+pyautogui==0.9.54
+pycaw==20260927
